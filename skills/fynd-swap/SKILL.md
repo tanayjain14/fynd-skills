@@ -1,11 +1,6 @@
 ---
 name: fynd-swap
-description: >-
-  Sets up and runs a Fynd DEX aggregator instance and executes on-chain swaps
-  end-to-end. Handles Rust installation, Fynd build, solver startup, route
-  quoting via /v1/quote, calldata encoding, signing, and transaction submission.
-  Use when someone says "set up Fynd", "swap tokens with Fynd", "run a swap",
-  "Fynd quickstart", "get a Fynd quote", or "execute a trade with Fynd".
+description: "Sets up and runs a Fynd DEX aggregator instance and executes on-chain swaps end-to-end. Handles Rust installation, Fynd build, solver startup, route quoting via /v1/quote, calldata encoding, signing, and transaction submission. Use when someone says set up Fynd, swap tokens with Fynd, run a swap, Fynd quickstart, get a Fynd quote, or execute a trade with Fynd."
 ---
 
 Set up Fynd and execute on-chain swaps from zero to tx hash.
@@ -25,7 +20,7 @@ Set up Fynd and execute on-chain swaps from zero to tx hash.
 
 ## Learnings
 
-Read [LEARNINGS.md](LEARNINGS.md) first. Apply any lessons before proceeding.
+Read [docs/LEARNINGS.md](docs/LEARNINGS.md) first. Apply any lessons before proceeding.
 
 ## User Communication
 
@@ -40,7 +35,7 @@ One skill, five phases. Detect which phases are complete and skip them.
 
 Tell user: **"Checking prerequisites..."**
 
-Check and install dependencies. See [references/setup.md](references/setup.md) for details.
+Check and install dependencies. See [docs/setup.md](docs/setup.md) for details.
 
 1. Check Rust >= 1.92: `rustc --version`
    - If missing or outdated: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
@@ -64,7 +59,7 @@ Tell user: **"Building Fynd. First build takes ~5 minutes — sit tight."**
    ```bash
    cd {{FYND_DIR}} && cargo build --release --examples
    ```
-3. Create `.env` in `{{FYND_DIR}}` if not present (see [references/setup.md](references/setup.md)).
+3. Create `.env` in `{{FYND_DIR}}` if not present (see [docs/setup.md](docs/setup.md)).
 4. Verify: `target/release/examples/tutorial` exists.
 
 Tell user: **"Build complete ({duration})."**
@@ -129,7 +124,7 @@ Tell user: **"Solver is running and healthy. Synced in {duration}."**
 ### Phase 4: Get Trade Intent and Quote
 
 1. If user specified tokens and amount (e.g., "swap 100 USDC to WETH"):
-   - Resolve symbols to addresses using [references/tokens.md](references/tokens.md).
+   - Resolve symbols to addresses using [docs/tokens.md](docs/tokens.md).
    - Convert human-readable amount to raw amount using token decimals.
 2. If not specified, ask: "What would you like to swap? Example: 100 USDC to WETH"
 3. For unknown token symbols, ask the user for the contract address.
@@ -235,7 +230,7 @@ Phases 1-3 remain unchanged.
 
 | File | When to read |
 |------|-------------|
-| [references/setup.md](references/setup.md) | First-time setup, env var questions |
-| [references/troubleshooting.md](references/troubleshooting.md) | Any error during workflow |
-| [references/tokens.md](references/tokens.md) | Resolving token symbols, CLI flags, config |
+| [docs/setup.md](docs/setup.md) | First-time setup, env var questions |
+| [docs/troubleshooting.md](docs/troubleshooting.md) | Any error during workflow |
+| [docs/tokens.md](docs/tokens.md) | Resolving token symbols, CLI flags, config |
 | [v1_learning.md](v1_learning.md) | First test run timeline and bugs found |
