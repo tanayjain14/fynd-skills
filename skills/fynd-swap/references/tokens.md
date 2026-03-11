@@ -32,7 +32,7 @@ Convert human-readable amounts to raw amounts using decimals:
 cargo run --example tutorial -- \
   --sell-token <ADDRESS>     # Token to sell
   --buy-token <ADDRESS>      # Token to buy
-  --sell-amount <RAW_AMOUNT> # Amount in smallest unit (wei, etc.)
+  --sell-amount <HUMAN_AMOUNT> # Human-readable decimal (e.g., 22.0 for 22 USDC). NOT raw/wei.
   --slippage-bps <BPS>       # Slippage tolerance (default: 50 = 0.5%)
   --solver-endpoint <URL>    # Solver URL (default: http://localhost:3000)
   --use-tenderly             # Use Tenderly for simulation instead of eth_simulate
@@ -41,7 +41,7 @@ cargo run --example tutorial -- \
 ## Solver CLI Flags
 
 ```
-cargo run --release serve -- \
+cargo run --release -- serve \
   --tycho-url <URL>          # Tycho endpoint (default: tycho-beta.propellerheads.xyz)
   --protocols <LIST>         # Comma-separated protocols (e.g., uniswap_v2,uniswap_v3)
   --http-port <PORT>         # HTTP port (default: 3000)
@@ -50,24 +50,26 @@ cargo run --release serve -- \
 
 ## Supported Protocols
 
-Common protocols for `--protocols` flag:
-- `uniswap_v2` - Uniswap V2 and forks
-- `uniswap_v3` - Uniswap V3
-- `uniswap_v4` - Uniswap V4
-- `sushiswap` - SushiSwap
-- `balancer_v2` - Balancer V2
-- `curve` - Curve Finance
+Use `uniswap_v2,uniswap_v3` — fastest sync and broadest coverage on Ethereum.
 
-Start with `uniswap_v2,uniswap_v3` for fastest sync and broadest coverage.
+## worker_pools.toml (required)
 
-## Fast worker_pools.toml
-
-For faster startup, create `worker_pools.toml` in `{{FYND_DIR}}`:
+The solver requires `worker_pools.toml` in `{{FYND_DIR}}`. The repo ships a default; if missing, create:
 
 ```toml
-[[pools]]
-protocols = ["uniswap_v2", "uniswap_v3"]
-tvl_threshold = 10000.0
-```
+[pools.most_liquid_2_hops_fast]
+algorithm = "most_liquid"
+num_workers = 5
+task_queue_capacity = 1000
+max_hops = 2
+timeout_ms = 100
+max_routes = 50
 
-This filters to pools with >$10k TVL, reducing sync time significantly.
+[pools.most_liquid_3_hops]
+algorithm = "most_liquid"
+num_workers = 3
+task_queue_capacity = 1000
+min_hops = 2
+max_hops = 3
+timeout_ms = 5000
+```

@@ -48,7 +48,7 @@ Check and install dependencies. See [references/setup.md](references/setup.md) f
    - If missing: `git clone https://github.com/propeller-heads/fynd.git {{FYND_DIR}}`
 3. Check environment variables:
    - `TYCHO_API_KEY` — **required**. Prompt user if not set. Get from propellerheads.xyz/tycho.
-   - `RPC_URL` — **strongly recommended**. Free RPCs (llamarpc, cloudflare-eth, ankr) frequently time out on gas price fetches, crashing the solver. Use a dedicated endpoint (Alchemy, Infura, QuikNode).
+   - `RPC_URL` — **required**. Prompt user if not set. Free RPCs (llamarpc, cloudflare-eth, ankr) crash the solver. If `.env` already has a free RPC, warn the user to replace it.
    - `PRIVATE_KEY` — required only for execution (Phase 5).
 4. Verify: `rustc --version` succeeds and `{{FYND_DIR}}/Cargo.toml` exists.
 
@@ -73,13 +73,32 @@ Tell user: **"Build complete ({duration})."**
 
 Tell user: **"Starting the Fynd solver..."**
 
-1. Check if already running:
+1. Verify `worker_pools.toml` exists in `{{FYND_DIR}}`. If missing, create the default:
+   ```toml
+   [pools.most_liquid_2_hops_fast]
+   algorithm = "most_liquid"
+   num_workers = 5
+   task_queue_capacity = 1000
+   max_hops = 2
+   timeout_ms = 100
+   max_routes = 50
+
+   [pools.most_liquid_3_hops]
+   algorithm = "most_liquid"
+   num_workers = 3
+   task_queue_capacity = 1000
+   min_hops = 2
+   max_hops = 3
+   timeout_ms = 5000
+   ```
+
+2. Check if already running:
    ```bash
    curl -s http://localhost:3000/v1/health
    ```
-   If healthy, skip to Phase 4.
+   Parse the JSON — skip to Phase 4 only if `"healthy": true` AND `"derived_data_ready": true`.
 
-2. **Pre-flight RPC check** — before starting the solver, verify the RPC is reachable:
+3. **Pre-flight RPC check** — before starting the solver, verify the RPC is reachable:
    ```bash
    curl -s -X POST {{RPC_URL}} \
      -H "Content-Type: application/json" \
@@ -88,24 +107,24 @@ Tell user: **"Starting the Fynd solver..."**
    If this fails or times out, tell user their RPC is unreachable and ask for a different one.
    Do NOT proceed with a broken RPC — the solver will crash.
 
-3. Start solver in background:
+4. Start solver in background using the auto-restart wrapper:
    ```bash
-   cd {{FYND_DIR}} && TYCHO_API_KEY={{TYCHO_API_KEY}} RUST_LOG=info \
-     cargo run --release -- serve \
-       --tycho-url tycho-beta.propellerheads.xyz \
-       --rpc-url {{RPC_URL}} \
-       --protocols uniswap_v2,uniswap_v3
+   cd {{FYND_DIR}} && bash scripts/fynd-run.sh --rpc-url {{RPC_URL}}
    ```
-   Note: `--` goes between `--release` and `serve` (cargo convention).
+   This uses `scripts/fynd-run.sh` which auto-restarts on transient Tycho "Missing block!"
+   crashes (up to 10 restarts in 5 minutes, then gives up). Env vars `TYCHO_API_KEY` and
+   `RPC_URL` must be set (or passed via flags).
 
-4. Poll `/v1/health` silently every 5s. Timeout after 5 minutes.
+5. Poll `/v1/health` silently every 5s. Timeout after 5 minutes.
    - Do NOT print individual poll attempts.
+   - Parse JSON: poll until `"healthy": true` AND `"derived_data_ready": true`.
+     HTTP 200 with `"healthy": false` means still syncing — keep polling.
    - **Crash detection**: if the health endpoint was responding and then stops, check
      if the background process is still alive. If it exited, read the last 20 lines of
      its output log and show the error to the user. Common cause: RPC timeout crashing
      the gas price fetcher.
 
-Tell user: **"Solver is running and healthy. Synced {num_pools} pool(s) in {duration}."**
+Tell user: **"Solver is running and healthy. Synced in {duration}."**
 
 ### Phase 4: Get Trade Intent and Quote
 
@@ -173,16 +192,38 @@ Send a real mainnet transaction. Requires `PRIVATE_KEY`.
 
 1. Confirm `PRIVATE_KEY` is set. Prompt if not.
 2. **Warn the user**: "This sends a real mainnet transaction. Use a test wallet with small amounts."
-3. Run the tutorial binary:
+3. **Simulate first** with `--simulate-only` (bypasses the interactive prompt):
    ```bash
-   cd {{FYND_DIR}} && cargo run --release --example tutorial -- \
-     --sell-token <ADDRESS> \
-     --buy-token <ADDRESS> \
-     --sell-amount <RAW_AMOUNT> \
-     --slippage-bps 50
+   cd {{FYND_DIR}} && PRIVATE_KEY={{PRIVATE_KEY}} RUST_LOG=info \
+     cargo run --release --example tutorial -- \
+       --sell-token <ADDRESS> \
+       --buy-token <ADDRESS> \
+       --sell-amount <HUMAN_AMOUNT> \
+       --slippage-bps 50 \
+       --simulate-only
    ```
-4. The tutorial prompts interactively: Simulate / Execute / Cancel.
-5. On success: show tx hash and Etherscan link (`https://etherscan.io/tx/<HASH>`).
+   `--sell-amount` takes a **human-readable decimal** (e.g., `22.0` for 22 USDC), NOT raw/wei.
+
+4. If simulation succeeds, **execute** using `expect` (the tutorial uses `dialoguer::Select`
+   which requires a TTY — piping input fails with "not a terminal"):
+   ```bash
+   cd {{FYND_DIR}} && expect -c '
+   set timeout 120
+   spawn env PRIVATE_KEY={{PRIVATE_KEY}} RUST_LOG=info \
+     cargo run --release --example tutorial -- \
+       --sell-token <ADDRESS> --buy-token <ADDRESS> \
+       --sell-amount <HUMAN_AMOUNT> --slippage-bps 50
+   expect "Choose an action"
+   sleep 1
+   send -- "\033\[B"
+   sleep 0.5
+   send -- "\r"
+   expect eof
+   '
+   ```
+
+5. The tutorial sends **two transactions**: an approval tx and the swap tx.
+   On success: show both tx hashes and Etherscan links.
 
 ## Future: fynd-client Upgrade
 

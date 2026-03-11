@@ -32,7 +32,7 @@ Default `{{FYND_DIR}}` is `~/fynd`. User can override.
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `TYCHO_API_KEY` | Yes | - | Tycho API key (get from propellerheads.xyz/tycho) |
-| `RPC_URL` | Strongly recommended | `https://eth.llamarpc.com` | Dedicated Ethereum RPC (Alchemy, Infura, QuikNode). Free RPCs crash the solver. |
+| `RPC_URL` | Yes | - | Dedicated Ethereum RPC (Alchemy, Infura, QuikNode). Free RPCs crash the solver. |
 | `PRIVATE_KEY` | For execution | - | Wallet private key (hex, no 0x prefix) |
 | `RUST_LOG` | No | `info` | Log verbosity (trace, debug, info, warn, error) |
 
