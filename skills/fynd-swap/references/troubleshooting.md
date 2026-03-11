@@ -7,6 +7,7 @@
 | `rustc: command not found` | Rust not installed | `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \| sh` then restart shell |
 | Build dependency errors | Stale cargo cache | `cargo clean && cargo build --release --examples` |
 | Health returns 503 | Tycho data still syncing | Wait 30-90s for uniswap_v2+v3. Check logs for sync progress. |
+| Gas price panic / solver crashes after sync | Free RPC timed out on `eth_getBlockByNumber` | Use a dedicated RPC (Alchemy, Infura, QuikNode). Free RPCs are unreliable for gas price fetches. |
 | Connection refused :3000 | Solver not running | Start solver (Phase 3 in SKILL.md) |
 | `"No route found"` | No liquidity path between tokens | Check token addresses are correct, try a different pair |
 | `"Sell/buy token not found"` | Token not indexed by Tycho | Verify the address is a valid ERC-20 on Etherscan |

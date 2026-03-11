@@ -32,7 +32,7 @@ Default `{{FYND_DIR}}` is `~/fynd`. User can override.
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `TYCHO_API_KEY` | Yes | - | Tycho API key (get from propellerheads.xyz/tycho) |
-| `RPC_URL` | No | `https://eth.llamarpc.com` | Ethereum RPC endpoint |
+| `RPC_URL` | Strongly recommended | `https://eth.llamarpc.com` | Dedicated Ethereum RPC (Alchemy, Infura, QuikNode). Free RPCs crash the solver. |
 | `PRIVATE_KEY` | For execution | - | Wallet private key (hex, no 0x prefix) |
 | `RUST_LOG` | No | `info` | Log verbosity (trace, debug, info, warn, error) |
 
@@ -42,7 +42,7 @@ Create `{{FYND_DIR}}/.env`:
 
 ```env
 TYCHO_API_KEY={{TYCHO_API_KEY}}
-RPC_URL=https://eth.llamarpc.com
+RPC_URL={{RPC_URL}}
 # PRIVATE_KEY=<hex-without-0x-prefix>
 # RUST_LOG=info
 ```
@@ -57,20 +57,16 @@ First build takes 3-10 minutes depending on hardware.
 
 ## Verify Build
 
-Check that both binaries exist:
+Check that the tutorial binary exists:
 ```bash
-ls -la {{FYND_DIR}}/target/release/fynd
 ls -la {{FYND_DIR}}/target/release/examples/tutorial
 ```
 
+Note: The solver does not produce a standalone `target/release/fynd` binary.
+Run the solver via `cargo run --release -- serve`. The tutorial binary IS at
+`target/release/examples/tutorial`.
+
 ## Skip Build
 
-If `target/release/fynd` and `target/release/examples/tutorial` both exist and are
-newer than the latest source change, the build step can be skipped.
-
-Check with:
-```bash
-# If these both exist and stat shows recent mtime, skip build
-stat {{FYND_DIR}}/target/release/fynd
-stat {{FYND_DIR}}/target/release/examples/tutorial
-```
+If `target/release/examples/tutorial` exists and is newer than the latest source
+change, the build step can be skipped.
