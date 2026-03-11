@@ -88,22 +88,25 @@ Tell user: **"Starting the Fynd solver..."**
    If this fails or times out, tell user their RPC is unreachable and ask for a different one.
    Do NOT proceed with a broken RPC — the solver will crash.
 
-3. Start solver in background:
+3. Start solver in background **using the auto-restart wrapper**:
    ```bash
-   cd {{FYND_DIR}} && TYCHO_API_KEY={{TYCHO_API_KEY}} RUST_LOG=info \
-     cargo run --release -- serve \
-       --tycho-url tycho-beta.propellerheads.xyz \
-       --rpc-url {{RPC_URL}} \
-       --protocols uniswap_v2,uniswap_v3
+   FYND_DIR={{FYND_DIR}} RPC_URL={{RPC_URL}} TYCHO_API_KEY={{TYCHO_API_KEY}} \
+     ~/.claude/skills/fynd-swap/scripts/fynd-run.sh
    ```
-   Note: `--` goes between `--release` and `serve` (cargo convention).
+   The wrapper script (`scripts/fynd-run.sh`) automatically restarts the solver
+   on transient crashes (e.g. Tycho `Missing block!` stream errors). It caps at
+   10 restarts within 5 minutes to avoid infinite loops on persistent failures.
+   The solver re-syncs in ~25s per restart.
+
+   Optional flags: `--protocols`, `--tycho-url`, `--fynd-dir`, `--rpc-url`.
 
 4. Poll `/v1/health` silently every 5s. Timeout after 5 minutes.
    - Do NOT print individual poll attempts.
    - **Crash detection**: if the health endpoint was responding and then stops, check
      if the background process is still alive. If it exited, read the last 20 lines of
-     its output log and show the error to the user. Common cause: RPC timeout crashing
-     the gas price fetcher.
+     its output log and show the error to the user. Common causes:
+       - RPC timeout crashing the gas price fetcher (use dedicated RPC)
+       - `Missing block!` from Tycho stream (auto-restart handles this)
 
 Tell user: **"Solver is running and healthy. Synced {num_pools} pool(s) in {duration}."**
 
@@ -197,4 +200,3 @@ Phases 1-3 remain unchanged.
 | [references/setup.md](references/setup.md) | First-time setup, env var questions |
 | [references/troubleshooting.md](references/troubleshooting.md) | Any error during workflow |
 | [references/tokens.md](references/tokens.md) | Resolving token symbols, CLI flags, config |
-| [v1_learning.md](v1_learning.md) | First test run timeline and bugs found |
