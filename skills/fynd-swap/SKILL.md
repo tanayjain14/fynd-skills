@@ -41,7 +41,7 @@ Check and install dependencies. See [references/setup.md](references/setup.md) f
    - If missing: `git clone https://github.com/propeller-heads/fynd.git {{FYND_DIR}}`
 3. Check environment variables:
    - `TYCHO_API_KEY` - **required**. Prompt user if not set. Get from propellerheads.xyz/tycho.
-   - `RPC_URL` - optional, defaults to `https://eth.llamarpc.com`
+   - `RPC_URL` - **strongly recommended**. Free RPCs (llamarpc, cloudflare-eth, ankr) frequently time out on gas price fetches, crashing the solver. Use a dedicated endpoint (Alchemy, Infura, QuikNode).
    - `PRIVATE_KEY` - required only for execution (Phase 5)
 4. Verify: `rustc --version` succeeds and `{{FYND_DIR}}/Cargo.toml` exists.
 
@@ -67,11 +67,13 @@ Start the Fynd solver HTTP server.
    ```
 2. If not running, start in background:
    ```bash
-   cd {{FYND_DIR}} && RUST_LOG=info cargo run --release serve -- \
+   cd {{FYND_DIR}} && RUST_LOG=info cargo run --release -- serve \
      --tycho-url tycho-beta.propellerheads.xyz \
+     --rpc-url {{RPC_URL}} \
      --protocols uniswap_v2,uniswap_v3
    ```
-3. Poll `/v1/health` every 5s until `"healthy": true`. Timeout after 3 minutes.
+   Note: `--` goes between `--release` and `serve` (cargo convention).
+3. Poll `/v1/health` every 5s until `"healthy": true`. Timeout after 5 minutes. Do not log individual poll attempts.
 4. Verify: health endpoint returns healthy.
 5. If trouble: see [references/troubleshooting.md](references/troubleshooting.md).
 
@@ -89,12 +91,16 @@ Resolve tokens and get a quote from the solver.
    curl -s http://localhost:3000/v1/quote \
      -H "Content-Type: application/json" \
      -d '{
-       "sell_token": "<SELL_ADDRESS>",
-       "buy_token": "<BUY_ADDRESS>",
-       "sell_amount": "<RAW_AMOUNT>",
-       "gas": true
+       "orders": [{
+         "token_in": "<SELL_ADDRESS>",
+         "token_out": "<BUY_ADDRESS>",
+         "amount": "<RAW_AMOUNT>",
+         "side": "sell",
+         "sender": "0x0000000000000000000000000000000000000000"
+       }]
      }'
    ```
+   Use a zero address for `sender` when quoting only. For execution, use the actual wallet address.
 5. Show the user: route (protocols, hops), expected output amount (human-readable), gas estimate.
 6. If user wants quote only, stop here.
 
