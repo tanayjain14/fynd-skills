@@ -43,3 +43,32 @@ Set health poll timeout to 5 minutes to be safe.
 `cargo build --release --examples` does NOT produce `target/release/fynd`.
 The solver binary is run via `cargo run --release -- serve`. The tutorial
 binary IS at `target/release/examples/tutorial`.
+
+## Tutorial --sell-amount takes human-readable float
+
+`--sell-amount 22.0` means 22 USDC (human-readable), NOT 22000000 (raw).
+The tutorial converts internally using token decimals from Tycho.
+
+## Health endpoint: parse JSON, not just HTTP status
+
+`/v1/health` returns HTTP 200 even when `"healthy": false`. Must parse JSON
+and check both `"healthy": true` AND `"derived_data_ready": true`.
+
+## Tutorial interactive prompt requires TTY
+
+`dialoguer::Select` fails with "not a terminal" when stdin is piped.
+Use `--simulate-only` for non-interactive simulation, or `expect` for execution.
+
+## Tutorial outputs two transactions
+
+Approval tx first, then swap tx. Report both hashes to the user.
+
+## Use fynd-run.sh to start the solver
+
+`scripts/fynd-run.sh` auto-restarts the solver on transient Tycho "Missing block!"
+stream errors. Use it instead of raw `cargo run` in Phase 3.
+
+## worker_pools.toml is required
+
+Solver crashes without it. The Fynd repo ships a default one. If running from
+a different directory, create it (see tokens.md for the format).
