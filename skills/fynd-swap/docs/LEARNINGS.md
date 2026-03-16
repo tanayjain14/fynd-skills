@@ -65,8 +65,21 @@ Approval tx first, then swap tx. Report both hashes to the user.
 
 ## Use fynd-run.sh to start the solver
 
-`scripts/fynd-run.sh` auto-restarts the solver on transient Tycho "Missing block!"
-stream errors. Use it instead of raw `cargo run` in Phase 3.
+`fynd-run.sh` lives in the skill directory at `~/.claude/skills/fynd-swap/scripts/fynd-run.sh`,
+NOT in the Fynd repo. Use it with `--fynd-dir ~/fynd`. It auto-restarts the solver on
+transient Tycho "Missing block!" stream errors.
+
+## --tycho-url defaults to localhost:4242
+
+The solver binary defaults `--tycho-url` to `localhost:4242`, NOT the remote Tycho API.
+Always pass `--tycho-url tycho-beta.propellerheads.xyz` explicitly or the solver will
+crash with "Unable to load tokens: error sending request for url (https://localhost:4242/v1/tokens)".
+
+## --protocols must be explicit
+
+Without `--protocols`, the solver tries to sync ALL protocols from Tycho. This hangs
+for minutes with no progress. Always pass `--protocols uniswap_v2,uniswap_v3` for
+fast sync (~20s).
 
 ## worker_pools.toml is required
 

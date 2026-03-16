@@ -102,13 +102,26 @@ Tell user: **"Starting the Fynd solver..."**
    If this fails or times out, tell user their RPC is unreachable and ask for a different one.
    Do NOT proceed with a broken RPC — the solver will crash.
 
-4. Start solver in background using the auto-restart wrapper:
+4. Start solver in background using the auto-restart wrapper from the skill directory:
    ```bash
-   cd {{FYND_DIR}} && bash scripts/fynd-run.sh --rpc-url {{RPC_URL}}
+   bash ~/.claude/skills/fynd-swap/scripts/fynd-run.sh --fynd-dir {{FYND_DIR}} --rpc-url {{RPC_URL}}
    ```
-   This uses `scripts/fynd-run.sh` which auto-restarts on transient Tycho "Missing block!"
-   crashes (up to 10 restarts in 5 minutes, then gives up). Env vars `TYCHO_API_KEY` and
-   `RPC_URL` must be set (or passed via flags).
+   The wrapper auto-restarts on transient Tycho "Missing block!" crashes (up to 10 restarts
+   in 5 minutes, then gives up). It defaults to `--tycho-url tycho-beta.propellerheads.xyz`
+   and `--protocols uniswap_v2,uniswap_v3`. Env vars `TYCHO_API_KEY` and `RPC_URL` must be set
+   (or passed via flags).
+
+   **If the wrapper is missing**, start directly:
+   ```bash
+   cd {{FYND_DIR}} && source .env && TYCHO_API_KEY=$TYCHO_API_KEY RUST_LOG=info \
+     cargo run --release -- serve \
+       --tycho-url tycho-beta.propellerheads.xyz \
+       --rpc-url "$RPC_URL" \
+       --protocols uniswap_v2,uniswap_v3 \
+     > /tmp/fynd-solver.log 2>&1 &
+   ```
+   **Critical**: `--tycho-url` defaults to `localhost:4242` (not the remote API) and omitting
+   `--protocols` syncs everything (hangs for minutes). Always pass both flags.
 
 5. Poll `/v1/health` silently every 5s. Timeout after 5 minutes.
    - Do NOT print individual poll attempts.
@@ -233,4 +246,4 @@ Phases 1-3 remain unchanged.
 | [docs/setup.md](docs/setup.md) | First-time setup, env var questions |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | Any error during workflow |
 | [docs/tokens.md](docs/tokens.md) | Resolving token symbols, CLI flags, config |
-| [v1_learning.md](v1_learning.md) | First test run timeline and bugs found |
+| [docs/v1_learning.md](docs/v1_learning.md) | First test run timeline and bugs found |
